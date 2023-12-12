@@ -208,6 +208,58 @@ def kcarter():
 
     return render_template('kcarter.html', next_link=next_link, last_redirect=last_redirect, third_party_trackers=config.third_party_trackers)
 
+@app.route("/simulator")
+def simulator():
+    server_whorls_v2, server_whorls_v3 = FingerprintAgent(request).detect_server_whorls()
+    whorls_v2 = server_whorls_v2.copy()
+    whorls_v3 = server_whorls_v3.copy()
+    randomized_results = 0
+    ios_lockdown = False
+
+    FingerprintRecorder.record_fingerprint(
+        whorls_v2, whorls_v3, session['long_cookie'], request.remote_addr, key)
+
+    counts, total, matching, bits, group, uniqueness = EntropyHelper.calculate_values(
+        whorls_v2, FingerprintHelper.whorl_v2_names)
+
+    markup = render_template('simulator.html',
+                             counts=counts,
+                             total=total,
+                             total_formatted=number_format(total),
+                             sample_string=EntropyHelper.size_words(total),
+                             matching=matching,
+                             bits=bits,
+                             group=group,
+                             labels=FingerprintHelper.whorl_v2_names,
+                             whorls=whorls_v2,
+                             randomized_results=randomized_results,
+                             ios_lockdown=ios_lockdown,
+                             uniqueness=uniqueness)
+
+    return markup
+
+
+@app.route("/update-fingerprint", methods=['POST'])
+def update_fingerprint():
+    server_whorls_v2, server_whorls_v3 = FingerprintAgent(request).detect_server_whorls()
+    whorls_v2 = server_whorls_v2.copy()
+    whorls_v3 = server_whorls_v3.copy()
+    data = json.loads(request.data)
+    for i in data['v2'].keys():
+        whorls_v2[i] = str(data['v2'][i])
+    for i in data['v3'].keys():
+        whorls_v3[i] = str(data['v3'][i])
+        
+    FingerprintRecorder.record_fingerprint(
+        whorls_v2, whorls_v3, session['long_cookie'], request.remote_addr, key)
+
+    counts, total, matching, bits, group, uniqueness = EntropyHelper.calculate_values(
+        whorls_v2, FingerprintHelper.whorl_v2_names)
+    
+
+    new_fingerprint = uniqueness
+    return jsonify({'fingerprint': uniqueness})
+
 
 # third-party route accessed in an iframe for tallying up domains seen
 @app.route("/kcarting-tally")

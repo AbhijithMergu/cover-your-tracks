@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Browser Privacy Simulator</title>
+</head>
+<body>
+    <h1>Browser Privacy Simulator</h1>
+    <p>Adjust the settings below to see how they affect your browser fingerprint:</p>
+    
+    <form id="simulatorForm">
+        <div class="form-control">
+            <label for="userAgent">User Agent:</label>
+            <input type="text" id="userAgent" name="userAgent">
+        </div>
+        <div class="form-control">
+            <label for="plugins">Plugins:</label>
+            <input type="text" id="plugins" name="plugins">
+        </div>
+        <div class="form-control">
+            <label for="timezone">Timezone:</label>
+            <input type="text" id="timezone" name="timezone">
+        </div>
+        <div class="form-control">
+            <label for="language">Language:</label>
+            <input type="text" id="language" name="language">
+        </div>
+
+        <button type="submit">Generate Fingerprint</button>
+    </form>
+
+    <div id="fingerprintResult">Your fingerprint will appear here.</div>
+
+    <script src="https://openfpcdn.io/fingerprintjs/v3"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const initialData = { initial_data_markup };
+            
+            document.getElementById('userAgent').value = initialData.userAgent;
+            document.getElementById('plugins').value = initialData.plugins;
+            document.getElementById('timezone').value = initialData.timezone;
+            document.getElementById('language').value = initialData.language;
+
+            const form = document.getElementById('simulatorForm');
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const formData = {
+                    userAgent: document.getElementById('userAgent').value,
+                };
+                fetch('/update-fingerprint', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('fingerprintResult').textContent = 'Fingerprint: ' + data.fingerprint;
+                });
+            });
+        });
+        </script>
+</body>
+</html>
